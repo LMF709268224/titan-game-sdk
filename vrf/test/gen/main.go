@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Filecoin-Titan/titan-game-sdk/vrf/test"
+	"github.com/zscboy/titan-game-sdk/vrf/test"
 
 	cborgen "github.com/whyrusleeping/cbor-gen"
 )

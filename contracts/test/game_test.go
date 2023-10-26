@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	contracts "github.com/Filecoin-Titan/titan-game-sdk/contracts/api"
-	"github.com/Filecoin-Titan/titan-game-sdk/contracts/client"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
+	contracts "github.com/zscboy/titan-game-sdk/contracts/api"
+	"github.com/zscboy/titan-game-sdk/contracts/client"
 )
 
 const (

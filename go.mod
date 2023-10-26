@@ -1,4 +1,4 @@
-module github.com/Filecoin-Titan/titan-game-sdk
+module github.com/zscboy/titan-game-sdk
 
 go 1.19
 

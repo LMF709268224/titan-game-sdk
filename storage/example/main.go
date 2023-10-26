@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Filecoin-Titan/titan-game-sdk/storage"
+	"github.com/zscboy/titan-game-sdk/storage"
 )
 
 func main() {

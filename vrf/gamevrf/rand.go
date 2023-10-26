@@ -3,7 +3,7 @@ package gamevrf
 import (
 	"encoding/binary"
 
-	"github.com/Filecoin-Titan/titan-game-sdk/vrf/filrpc"
+	"github.com/zscboy/titan-game-sdk/vrf/filrpc"
 
 	"github.com/filecoin-project/go-address"
 	"github.com/minio/blake2b-simd"

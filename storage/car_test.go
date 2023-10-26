@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Filecoin-Titan/titan-game-sdk/storage/memfile"
+	"github.com/zscboy/titan-game-sdk/storage/memfile"
 )
 
 func TestCalculateCarCID(t *testing.T) {
-	f, err := os.Open("./example/example.exe")
+	f, err := os.Open("./example/main.go")
 	if err != nil {
 		t.Fatal(err)
 	}

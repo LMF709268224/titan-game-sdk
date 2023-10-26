@@ -3,7 +3,7 @@ Titan Storage is an advanced cloud storage application, integrating a visual int
 
 ## Test
 ### 1 Build
-    git clone https://github.com/Filecoin-Titan/titan-game-sdk.git
+    git clone https://github.com/zscboy/titan-game-sdk.git
     cd /titan-game-sdk/storage/example
     go build
 
@@ -25,7 +25,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/Filecoin-Titan/titan-game-sdk/storage"
+	"github.com/zscboy/titan-game-sdk/storage"
 )
 
 func main() {

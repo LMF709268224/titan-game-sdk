@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Filecoin-Titan/titan-game-sdk/vrf/filrpc"
+	"github.com/zscboy/titan-game-sdk/vrf/filrpc"
 
 	"github.com/filecoin-project/go-address"
 	"golang.org/x/xerrors"

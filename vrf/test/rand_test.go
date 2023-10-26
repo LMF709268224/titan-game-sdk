@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Filecoin-Titan/titan-game-sdk/vrf/filrpc"
-	"github.com/Filecoin-Titan/titan-game-sdk/vrf/gamevrf"
-	"github.com/Filecoin-Titan/titan-game-sdk/vrf/trand"
+	"github.com/zscboy/titan-game-sdk/vrf/filrpc"
+	"github.com/zscboy/titan-game-sdk/vrf/gamevrf"
+	"github.com/zscboy/titan-game-sdk/vrf/trand"
 
 	"github.com/filecoin-project/go-address"
 )

@@ -9,15 +9,15 @@ import (
 	"testing"
 	"time"
 
-	contracts "github.com/Filecoin-Titan/titan-game-sdk/contracts/api"
-	"github.com/Filecoin-Titan/titan-game-sdk/contracts/client"
-	"github.com/Filecoin-Titan/titan-game-sdk/storage"
-	"github.com/Filecoin-Titan/titan-game-sdk/vrf/filrpc"
-	"github.com/Filecoin-Titan/titan-game-sdk/vrf/gamevrf"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/filecoin-project/go-address"
+	contracts "github.com/zscboy/titan-game-sdk/contracts/api"
+	"github.com/zscboy/titan-game-sdk/contracts/client"
+	"github.com/zscboy/titan-game-sdk/storage"
+	"github.com/zscboy/titan-game-sdk/vrf/filrpc"
+	"github.com/zscboy/titan-game-sdk/vrf/gamevrf"
 )
 
 var (
