@@ -102,7 +102,7 @@ func TestUpload(t *testing.T) {
 		t.Logf("upload %d of %d", doneSize, totalSize)
 	}
 
-	filePath := "../titan"
+	filePath := "./"
 	visitFile := func(fp string, fi os.DirEntry, err error) error {
 		// Check for and handle errors
 		if err != nil {
@@ -125,12 +125,6 @@ func TestUpload(t *testing.T) {
 				}
 
 				t.Logf("totalSize %s success", fp)
-				// path, err := filepath.Abs(fp)
-				// if err != nil {
-				// 	t.Fatal(err)
-				// }
-				// filename := filepath.Base(path)
-				// fmt.Printf("Path: %s, file %s\n", path, filename)
 			}
 
 		}

@@ -13,12 +13,8 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/Filecoin-Titan/titan/api"
-	"github.com/Filecoin-Titan/titan/api/client"
-	"github.com/Filecoin-Titan/titan/api/types"
-	cliutil "github.com/Filecoin-Titan/titan/cli/util"
-	"github.com/filecoin-project/go-jsonrpc"
 	"github.com/ipfs/go-cid"
+	"github.com/zscboy/titan-game-sdk/storage/client"
 	"github.com/zscboy/titan-game-sdk/storage/memfile"
 )
 
@@ -40,7 +36,7 @@ type Storage interface {
 }
 
 type storage struct {
-	schedulerAPI api.Scheduler
+	schedulerAPI client.Scheduler
 }
 
 func NewStorage(locatorURL, apiKey string) (Storage, storageClose, error) {
@@ -50,16 +46,12 @@ func NewStorage(locatorURL, apiKey string) (Storage, storageClose, error) {
 	}
 
 	// use http3 client
-	httpClient, err := cliutil.NewHTTP3Client(udpPacketConn, true, "")
+	httpClient, err := client.NewHTTP3Client(udpPacketConn, true, "")
 	if err != nil {
 		return nil, nil, fmt.Errorf("NewHTTP3Client %w", err)
 	}
 
-	locatorAPI, _, err := client.NewLocator(context.TODO(), locatorURL, nil, jsonrpc.WithHTTPClient(httpClient))
-	if err != nil {
-		return nil, nil, fmt.Errorf("NewLocator %w", err)
-	}
-
+	locatorAPI := client.NewLocator(locatorURL, nil, client.HTTPClientOption(httpClient))
 	schedulerURL, err := locatorAPI.GetSchedulerWithAPIKey(context.Background(), apiKey)
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetSchedulerWithAPIKey %w", err)
@@ -68,13 +60,8 @@ func NewStorage(locatorURL, apiKey string) (Storage, storageClose, error) {
 	headers := http.Header{}
 	headers.Add("Authorization", "Bearer "+apiKey)
 
-	schedulerAPI, apiClose, err := client.NewScheduler(context.TODO(), schedulerURL, headers, jsonrpc.WithHTTPClient(httpClient))
-	if err != nil {
-		return nil, nil, fmt.Errorf("NewScheduler %w", err)
-	}
-
+	schedulerAPI := client.NewScheduler(schedulerURL, headers, client.HTTPClientOption(httpClient))
 	close := func() {
-		apiClose()
 		udpPacketConn.Close()
 	}
 	return &storage{schedulerAPI: schedulerAPI}, close, nil
@@ -119,8 +106,7 @@ func (s *storage) UploadFile(ctx context.Context, filePath string, progress prog
 		return cid.Cid{}, err
 	}
 
-	assetProperty := &types.AssetProperty{AssetCID: root.String(), AssetName: fileName, AssetSize: fileInfo.Size(), AssetType: fileType}
-
+	assetProperty := &client.AssetProperty{AssetCID: root.String(), AssetName: fileName, AssetSize: fileInfo.Size(), AssetType: fileType}
 	rsp, err := s.schedulerAPI.CreateUserAsset(ctx, assetProperty)
 	if err != nil {
 		return cid.Cid{}, fmt.Errorf("CreateUserAsset error %w", err)
@@ -233,8 +219,7 @@ func (s *storage) UploadStream(ctx context.Context, r io.Reader, progress progre
 		return cid.Cid{}, err
 	}
 
-	assetProperty := &types.AssetProperty{AssetCID: root.String(), AssetName: root.String(), AssetSize: int64(len(memFile.Bytes())), AssetType: string(FileTypeFile)}
-
+	assetProperty := &client.AssetProperty{AssetCID: root.String(), AssetName: root.String(), AssetSize: int64(len(memFile.Bytes())), AssetType: string(FileTypeFile)}
 	rsp, err := s.schedulerAPI.CreateUserAsset(ctx, assetProperty)
 	if err != nil {
 		return cid.Cid{}, fmt.Errorf("CreateUserAsset error %w", err)
