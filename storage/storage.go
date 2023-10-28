@@ -26,12 +26,12 @@ const (
 )
 
 type storageClose func()
-type progressFunc func(doneSize int64, totalSize int64)
+type ProgressFunc func(doneSize int64, totalSize int64)
 
 type Storage interface {
 	// UploadFile the file path can be the absolute path of a single file or a directory
-	UploadFile(ctx context.Context, filePath string, progress progressFunc) (cid.Cid, error)
-	UploadStream(ctx context.Context, r io.Reader, progress progressFunc) (cid.Cid, error)
+	UploadFile(ctx context.Context, filePath string, progress ProgressFunc) (cid.Cid, error)
+	UploadStream(ctx context.Context, r io.Reader, progress ProgressFunc) (cid.Cid, error)
 	DeleteFile(ctx context.Context, rootCID string) error
 }
 
@@ -68,7 +68,7 @@ func NewStorage(locatorURL, apiKey string) (Storage, storageClose, error) {
 }
 
 // The file path can be a single file or a directory
-func (s *storage) UploadFile(ctx context.Context, filePath string, progress progressFunc) (cid.Cid, error) {
+func (s *storage) UploadFile(ctx context.Context, filePath string, progress ProgressFunc) (cid.Cid, error) {
 	// delete template file if exist
 	fileName := filepath.Base(filePath)
 	tempFile := path.Join(os.TempDir(), fileName)
@@ -124,7 +124,7 @@ func (s *storage) UploadFile(ctx context.Context, filePath string, progress prog
 	return root, nil
 }
 
-func (s *storage) uploadFileWithForm(ctx context.Context, r io.Reader, name, uploadURL, token string, progress progressFunc) error {
+func (s *storage) uploadFileWithForm(ctx context.Context, r io.Reader, name, uploadURL, token string, progress ProgressFunc) error {
 	// Create a new multipart form body
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -212,7 +212,7 @@ func (s *storage) DeleteFile(ctx context.Context, rootCID string) error {
 	return s.schedulerAPI.DeleteUserAsset(ctx, rootCID)
 }
 
-func (s *storage) UploadStream(ctx context.Context, r io.Reader, progress progressFunc) (cid.Cid, error) {
+func (s *storage) UploadStream(ctx context.Context, r io.Reader, progress ProgressFunc) (cid.Cid, error) {
 	memFile := memfile.New([]byte{})
 	root, err := createCarStream(r, memFile)
 	if err != nil {
