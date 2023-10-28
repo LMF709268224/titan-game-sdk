@@ -121,7 +121,7 @@ func writeFiles(ctx context.Context, noWrap bool, bs *blockstore.ReadWrite, path
 	return rcl.Cid, nil
 }
 
-func CalculateCID(r io.Reader) (cid.Cid, error) {
+func CalculateCid(r io.Reader) (cid.Cid, error) {
 	ls := cidlink.DefaultLinkSystem()
 	ls.TrustedStorage = true
 
