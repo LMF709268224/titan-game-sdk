@@ -11,6 +11,7 @@ contract GameReplayContract is Ownable {
         require(_replays.length > 0, "_replays can not empty");
 
         for (uint256 i = 0; i < _replays.length; i++) {
+            // TODO check _replay[i]
             copyReplayToStorage(_replays[i]);
         }
     }

@@ -3,22 +3,27 @@ package client
 import (
 	"context"
 	"crypto/ecdsa"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
+	"math/big"
 )
+
+type Client interface {
+	InvokeContract(nonce uint64, invokeFunc func(opts *bind.TransactOpts) (*types.Transaction, error)) ([]byte, error)
+	EthClient() *ethclient.Client
+	Address() (common.Address, error)
+}
 
 type client struct {
 	cfg    Config
 	client *ethclient.Client
 }
 
-func New(opts ...Option) (*client, error) {
+func New(opts ...Option) (Client, error) {
 	cfg := defaultConfig()
 
 	for _, opt := range opts {
