@@ -179,21 +179,20 @@ func (s *storage) uploadFileWithForm(ctx context.Context, r io.Reader, name, upl
 		return err
 	}
 
-	type result struct {
+	type Result struct {
 		Code int    `json:"code"`
 		Err  int    `json:"err"`
 		Msg  string `json:"msg"`
 	}
 
-	ret := result{}
-	if err := json.Unmarshal(b, &r); err != nil {
+	var ret Result
+	if err := json.Unmarshal(b, &ret); err != nil {
 		return err
 	}
 
 	if ret.Code != 0 {
 		return fmt.Errorf(ret.Msg)
 	}
-
 	return nil
 }
 
