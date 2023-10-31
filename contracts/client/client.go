@@ -3,13 +3,14 @@ package client
 import (
 	"context"
 	"crypto/ecdsa"
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
-	"math/big"
 )
 
 type Client interface {
@@ -59,11 +60,9 @@ func (c *client) InvokeContract(nonce uint64, invokeFunc func(opts *bind.Transac
 		return nil, errors.New("cannot assert type: publicKey is not of type *ecdsa.PublicKey")
 	}
 
-	if nonce == 0 {
-		nonce, err = c.Nonce()
-		if err != nil {
-			return nil, err
-		}
+	var n *big.Int
+	if nonce > 0 {
+		n = big.NewInt(int64(nonce))
 	}
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
@@ -74,7 +73,7 @@ func (c *client) InvokeContract(nonce uint64, invokeFunc func(opts *bind.Transac
 		},
 		From:    fromAddress,
 		Context: context.Background(),
-		Nonce:   big.NewInt(int64(nonce)),
+		Nonce:   n,
 	}
 
 	tx, err := invokeFunc(opts)
