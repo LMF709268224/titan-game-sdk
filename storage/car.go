@@ -185,9 +185,6 @@ func createCarStream(r io.Reader, carStream CarStream) (cid.Cid, error) {
 		return cid.Cid{}, err
 	}
 
-	// return root, nil
-	// return nil
-	// re-open/finalize with the final root.
 	return root, replaceRootsInCar(carStream, []cid.Cid{root})
 }
 

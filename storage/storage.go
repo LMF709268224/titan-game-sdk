@@ -31,6 +31,7 @@ type ProgressFunc func(doneSize int64, totalSize int64)
 type Storage interface {
 	// UploadFile the file path can be the absolute path of a single file or a directory
 	UploadFile(ctx context.Context, filePath string, progress ProgressFunc) (cid.Cid, error)
+	// UploadStream can not upload bigger than 100M, it will cost much memory and return error
 	UploadStream(ctx context.Context, r io.Reader, progress ProgressFunc) (cid.Cid, error)
 	DeleteFile(ctx context.Context, rootCID string) error
 }
@@ -217,6 +218,7 @@ func (s *storage) UploadStream(ctx context.Context, r io.Reader, progress Progre
 	if err != nil {
 		return cid.Cid{}, err
 	}
+	memFile.Seek(0, 0)
 
 	assetProperty := &client.AssetProperty{AssetCID: root.String(), AssetName: root.String(), AssetSize: int64(len(memFile.Bytes())), AssetType: string(FileTypeFile)}
 	rsp, err := s.schedulerAPI.CreateUserAsset(ctx, assetProperty)
