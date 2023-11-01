@@ -1,6 +1,9 @@
 package gamevrf
 
 import (
+	"encoding/hex"
+	"encoding/json"
+
 	bls "github.com/drand/kyber-bls12381"
 	sign "github.com/drand/kyber/sign/bls"
 	rand2 "github.com/drand/kyber/util/random"
@@ -9,6 +12,11 @@ import (
 
 // Mark: filecoin blst rust implementation use follow DST
 const DST = string("BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_")
+
+type KeyInfo struct {
+	Type       string
+	PrivateKey []byte
+}
 
 func KyberBlsGenPrivateKey() ([]byte, []byte, error) {
 	suite := bls.NewBLS12381Suite()
@@ -58,6 +66,22 @@ func FilBlsKey2PublicKey(filKey []byte) ([]byte, error) {
 	}
 
 	return pubb, nil
+}
+
+// the privateKey is export from filecoin wallet
+func FilBlsKeyFromString(privateKey string) ([]byte, error) {
+	priv, err := hex.DecodeString(privateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	var keyInfo KeyInfo
+	err = json.Unmarshal(priv, &keyInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return keyInfo.PrivateKey, nil
 }
 
 func reverse(dst, src []byte) []byte {

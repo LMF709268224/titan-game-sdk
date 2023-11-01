@@ -71,7 +71,7 @@ func TestOnGameServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cid, err := storage.CalculateCID(bytes.NewReader(replayData))
+	cid, err := storage.CalculateCid(bytes.NewReader(replayData))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -272,7 +272,7 @@ func TestSaveGameReplays(t *testing.T) {
 		return
 	}
 
-	cid, err := storage.CalculateCID(bytes.NewReader(replayData))
+	cid, err := storage.CalculateCid(bytes.NewReader(replayData))
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -417,4 +417,28 @@ func saveGameReplyWithContract2(nonce uint64, replay contracts.GameRoundReplay) 
 	fmt.Println(time.Now().Format("2006-01-02 15:04:05"), " send nonce :", nonce, " sentCount: ", sentCount)
 
 	return nil
+}
+
+func TestPrivate2Address(t *testing.T) {
+	publicKey, err := gamevrf.FilBlsKey2PublicKey(filPrivateKey)
+	if err != nil {
+		t.Fatal("FilBlsKey2PublicKey error ", err)
+	}
+
+	addr, err := address.NewBLSAddress(publicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log("address ", addr.String())
+}
+
+func TestPrivateKeyFromString(t *testing.T) {
+	// the private key export from filecoin wallet
+	privateKey := "7b2254797065223a22626c73222c22507269766174654b6579223a225a796f746430416e4c676455566c73394778505455422b6262644737396f7278376845563145384178786f3d227d"
+	priv, err := gamevrf.FilBlsKeyFromString(privateKey)
+	if err != nil {
+		t.Fatal("FilBlsKeyFromString error ", err)
+	}
+
+	t.Log("privateKey ", priv)
 }
