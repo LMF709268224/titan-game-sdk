@@ -17,6 +17,7 @@ type Client interface {
 	InvokeContract(nonce uint64, invokeFunc func(opts *bind.TransactOpts) (*types.Transaction, error)) ([]byte, error)
 	EthClient() *ethclient.Client
 	Address() (common.Address, error)
+	Nonce() (uint64, error)
 }
 
 type client struct {

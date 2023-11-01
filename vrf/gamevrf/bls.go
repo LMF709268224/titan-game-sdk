@@ -41,6 +41,25 @@ func KyberBlsKey2FilBlsKey(kyberKey []byte) []byte {
 	return filKey
 }
 
+func FilBlsKey2PublicKey(filKey []byte) ([]byte, error) {
+	privateKey := FilBlsKey2KyberBlsKey(filKey)
+
+	suite := bls.NewBLS12381Suite()
+	sc := suite.G1().Scalar()
+	err := sc.UnmarshalBinary(privateKey)
+	if err != nil {
+		return nil, xerrors.Errorf("FilBlsKey2PublicKey UnmarshalBinary failed: %w", err)
+	}
+
+	pub := suite.G1().Point().Mul(sc, nil)
+	pubb, err := pub.MarshalBinary()
+	if err != nil {
+		return nil, xerrors.Errorf("FilBlsKey2PublicKey MarshalBinary failed: %w", err)
+	}
+
+	return pubb, nil
+}
+
 func reverse(dst, src []byte) []byte {
 	if dst == nil {
 		dst = make([]byte, len(src))
