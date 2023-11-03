@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"testing"
 	"time"
@@ -15,16 +17,14 @@ import (
 )
 
 const (
-	endpoint  = "http://172.25.9.91:1251/rpc/v1"
-	networkID = 2371761377286762
+	// endpoint  = "http://172.25.9.91:1251/rpc/v1"
+	// networkID = 2371761377286762
 	// networkID = 314159
 
-	// endpoint = "https://api.calibration.node.glif.io/"
+	endpoint = "https://api.calibration.node.glif.io/"
 
-	contractAddress = "0x3f1AbDFC7f94b4F20412f142f0a42DA4E7fcf57a" //"0x759c4Bb3BB2182A478e1A95e0A0D906E23716F54"
+	contractAddress = "0x4770f4Bfbb1A2D701dd34Ab28b73F710D6E2f846" //"0x759c4Bb3BB2182A478e1A95e0A0D906E23716F54"
 )
-
-var filPublicKey = []byte{146, 209, 52, 147, 166, 127, 130, 148, 172, 13, 162, 254, 17, 85, 254, 151, 93, 182, 28, 218, 103, 106, 200, 115, 178, 101, 156, 74, 25, 214, 220, 136, 167, 32, 147, 231, 40, 250, 149, 109, 229, 58, 7, 135, 214, 93, 55, 169}
 
 func TestDeployGame(t *testing.T) {
 	c, err := client.New(
@@ -164,7 +164,7 @@ func TestTransferOwner(t *testing.T) {
 }
 
 func TestGetGameReplay(t *testing.T) {
-	roundID := "c010d62f-5f0a-462e-a20f-aa7e2b52c674"
+	roundID := "59ba7216-db8d-42c2-b92e-fff22b07a6e3"
 	c, err := client.New(
 		client.PrivateKeyOption(os.Getenv("PRIVATE_KEY")),
 		client.EndpointOption(endpoint),
@@ -189,4 +189,47 @@ func TestGetGameReplay(t *testing.T) {
 	}
 
 	t.Log("game replay: ", replay)
+}
+
+func TestForeachGameReplay(t *testing.T) {
+	c, err := client.New(
+		client.PrivateKeyOption(os.Getenv("PRIVATE_KEY")),
+		client.EndpointOption(endpoint),
+	)
+	if err != nil {
+		t.Fatal("new client err ", err.Error())
+	}
+
+	gameContractAddress := common.HexToAddress(contractAddress)
+	instance, err := contracts.NewGameReplayContract(gameContractAddress, c.EthClient())
+	if err != nil {
+		t.Fatal("new contract instance err ", err.Error())
+	}
+
+	if instance == nil {
+		t.Fatal("instance == nil")
+	}
+
+	length, err := instance.GetGameReplayLength(nil)
+	if err != nil {
+		t.Fatal("new client err ", err.Error())
+	}
+
+	t.Log("game replay length: ", length)
+
+	for i := 0; i < int(length.Int64()); i++ {
+		replay, err := instance.GetGameReplayByIndex(nil, big.NewInt(int64(i)))
+		if err != nil {
+			t.Fatal("GetGameReplayByIndex ", err)
+		}
+
+		buf, err := json.Marshal(replay)
+		if err != nil {
+			t.Fatal("Marshal ", err)
+		}
+		t.Log("game replay: ", string(buf))
+		// t.Logf("gameID %s,replayCID %s, replayID %s, roundID %s", replay.GameInfo.GameID, replay.ReplayCID, replay.GameInfo.ReplayID, replay.GameInfo.RoundID)
+	}
+
+	// t.Log("game replay: ", replay)
 }
