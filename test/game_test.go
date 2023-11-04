@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"titan-game-sdk/storage"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -15,7 +16,6 @@ import (
 	"github.com/filecoin-project/go-address"
 	contracts "github.com/zscboy/titan-game-sdk/contracts/api"
 	"github.com/zscboy/titan-game-sdk/contracts/client"
-	"github.com/zscboy/titan-game-sdk/storage"
 	"github.com/zscboy/titan-game-sdk/vrf/filrpc"
 	"github.com/zscboy/titan-game-sdk/vrf/gamevrf"
 )
@@ -35,7 +35,8 @@ var (
 
 	sentCount     = 0
 	receivedCount = 0
-	gameInfoCount = 500
+	gameInfoCount = 34
+	messageCount  = 500
 )
 
 func TestOnGameServer(t *testing.T) {
@@ -317,18 +318,22 @@ func TestSaveGameReplays(t *testing.T) {
 	fmt.Println("nonce : ", nonce)
 	var gameMap sync.Map
 
-	for i := 0; i < gameInfoCount; i++ {
+	go watchMessage(&gameMap, c)
+
+	for i := 0; i < messageCount; i++ {
 		n := nonce
 
 		key := fmt.Sprintf("r_%d", n)
 		gameMap.Store(key, nil)
 
+		saveGameReplyWithContract2(n, *replay)
 		nonce++
-
-		go saveGameReplyWithContract2(n, *replay)
-
 	}
 
+	select {}
+}
+
+func watchMessage(gameMap *sync.Map, c client.Client) {
 	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
@@ -361,10 +366,6 @@ func TestSaveGameReplays(t *testing.T) {
 				return true
 			})
 
-			if receivedCount >= sentCount {
-				fmt.Println("end...")
-				return
-			}
 		}
 	}
 }
@@ -390,12 +391,13 @@ func saveGameReplyWithContract2(nonce uint64, replay contracts.GameRoundReplay) 
 	}
 
 	replay.GameInfo.ReplayID = fmt.Sprintf("r_%d", nonce)
-	list := []contracts.GameRoundReplay{replay}
-	// for i := 0; i < 34; i++ {
-	// 	list = append(list, replay)
-	// }
 
-	_, err = c.InvokeContract(nonce, func(opts *bind.TransactOpts) (*types.Transaction, error) {
+	list := make([]contracts.GameRoundReplay, 0)
+	for i := 0; i < gameInfoCount; i++ {
+		list = append(list, replay)
+	}
+
+	_, err = c.InvokeContract(0, func(opts *bind.TransactOpts) (*types.Transaction, error) {
 		result, err := instance.SaveGameReplay(opts, list)
 		if err != nil {
 			fmt.Println("SaveGameReplay :", err)
