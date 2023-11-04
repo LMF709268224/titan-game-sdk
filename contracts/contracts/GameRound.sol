@@ -5,7 +5,7 @@ contract GameRound {
     struct Result {
         string PlayerID;
         uint64 CurrentScore;
-        uint64 WinScore;
+        int64 WinScore;
     }
 
     struct Info {

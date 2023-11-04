@@ -23,7 +23,7 @@ const (
 
 	endpoint = "https://api.calibration.node.glif.io/"
 
-	contractAddress = "0x4770f4Bfbb1A2D701dd34Ab28b73F710D6E2f846" //"0x759c4Bb3BB2182A478e1A95e0A0D906E23716F54"
+	contractAddress = "0x4b599a339A7b649C0fe641C2143dde42985602eD" //"0x759c4Bb3BB2182A478e1A95e0A0D906E23716F54"
 )
 
 func TestDeployGame(t *testing.T) {
@@ -73,7 +73,7 @@ func TestSaveGameReplay(t *testing.T) {
 			result := contracts.GameRoundResult{
 				PlayerID:     fmt.Sprintf("%d", i),
 				CurrentScore: 100,
-				WinScore:     1,
+				WinScore:     -1,
 			}
 			results = append(results, result)
 
