@@ -3,12 +3,14 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
-	"titan-game-sdk/storage"
+
+	"github.com/zscboy/titan-game-sdk/storage"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -29,9 +31,10 @@ var (
 	replayData   = []byte{166, 151, 5, 61, 189, 201, 203, 69, 188, 20, 9, 50, 223, 153, 238, 59, 149, 71, 92, 205, 245, 57, 9, 168, 156, 163, 49, 215, 203, 159, 209, 245, 110, 78, 130, 62, 224, 136, 188, 64, 79, 245, 145, 21, 119, 13, 43, 8, 3, 231, 35, 65, 212, 42, 11, 44, 247, 146, 120, 206, 82, 252, 203, 131, 1, 13, 150, 229, 244, 12, 165, 170, 77, 27, 239, 148, 184, 106, 124, 46, 182, 222, 112, 241, 205, 168, 133, 58, 106, 104, 70, 68, 250, 70, 84, 27}
 
 	ethPrivateKey   = "9382b3739fb3173143d35afb0f2b1ddc6cf1713db110563832c2b7b9108ffb28"
-	contractAddress = "0x3f1AbDFC7f94b4F20412f142f0a42DA4E7fcf57a" // "0x5D7990C0487C57E3a0b57f2d3472600c37a5eE98"
+	contractAddress = "0x4b599a339A7b649C0fe641C2143dde42985602eD" // "0x5D7990C0487C57E3a0b57f2d3472600c37a5eE98"
 
-	nodeURL = "http://172.25.9.91:1251/rpc/v1" //"https://api.calibration.node.glif.io/"
+	// nodeURL = "http://172.25.9.91:1251/rpc/v1"
+	nodeURL = "https://api.calibration.node.glif.io/"
 
 	sentCount     = 0
 	receivedCount = 0
@@ -174,7 +177,22 @@ func saveGameReplyWithContract(replay *contracts.GameRoundReplay) error {
 	}
 }
 
+// func getReplay(s storage.Storage, cid string) []byte {
+// 	s.
+// }
+
 func TestOnGameUser(t *testing.T) {
+	// storage, close, err := storage.NewStorage(*locatorURL, *apiKey)
+	// if err != nil {
+	// 	fmt.Println("NewSchedulerAPI error ", err.Error())
+	// 	return
+	// }
+	// defer close()
+
+	filClient := filrpc.New(
+		filrpc.NodeURLOption(nodeURL),
+	)
+
 	c, err := client.New(
 		client.PrivateKeyOption(ethPrivateKey),
 		client.EndpointOption(nodeURL),
@@ -183,8 +201,7 @@ func TestOnGameUser(t *testing.T) {
 		t.Fatal("new client err ", err.Error())
 	}
 
-	gameContractAddress := common.HexToAddress(contractAddress)
-	instance, err := contracts.NewGameReplayContract(gameContractAddress, c.EthClient())
+	instance, err := contracts.NewGameReplayContract(common.HexToAddress(contractAddress), c.EthClient())
 	if err != nil {
 		t.Fatal("new contract instance err ", err.Error())
 	}
@@ -193,39 +210,51 @@ func TestOnGameUser(t *testing.T) {
 		t.Fatal("instance == nil")
 	}
 
-	replayID := "bilibili"
-	replay, err := instance.GetGameReplay(nil, replayID)
+	length, err := instance.GetGameReplayLength(nil)
 	if err != nil {
 		t.Fatal("new client err ", err.Error())
 	}
 
-	addr, err := address.NewFromString(replay.Address)
-	if err != nil {
-		t.Fatal(err)
+	t.Log("game replay length: ", length)
+
+	end := int64(0)
+	testNum := 10
+	if length.Int64() > int64(testNum) {
+		end = length.Int64() - int64(testNum)
 	}
 
-	filClient := filrpc.New(
-		filrpc.NodeURLOption(nodeURL),
-	)
+	for i := length.Int64() - 1; i >= end; i-- {
+		replay, err := instance.GetGameReplayByIndex(nil, big.NewInt(int64(i)))
+		if err != nil {
+			t.Fatal("GetGameReplayByIndex ", err)
+		}
 
-	tps, err := filClient.ChainGetTipSetByHeight(chainHeight)
-	if err != nil {
-		t.Fatal(err)
+		addr, err := address.NewFromString(replay.Address)
+		if err != nil {
+			t.Error("replay.Address ", replay.Address)
+		}
+
+		tps, err := filClient.ChainGetTipSetByHeight(int64(replay.VRFHeight))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		gameRoundInfo := contractGameRoundInfoToGameRoundInfo(&replay.GameInfo)
+		buf := new(bytes.Buffer)
+		err = gameRoundInfo.MarshalCBOR(buf)
+		if err != nil {
+			t.Fatal(err)
+		}
+		entropy := buf.Bytes()
+
+		vrfout := &gamevrf.VRFOut{Height: replay.VRFHeight, Proof: replay.VRFProof}
+		err = gamevrf.FilVerifyVRFByTipSet(gamevrf.DomainSeparationTag(replay.DomainSeparationTag), addr, tps, entropy, vrfout)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 	}
 
-	gameRoundInfo := contractGameRoundInfoToGameRoundInfo(&replay.GameInfo)
-	buf := new(bytes.Buffer)
-	err = gameRoundInfo.MarshalCBOR(buf)
-	if err != nil {
-		t.Fatal(err)
-	}
-	entropy := buf.Bytes()
-
-	vrfout := &gamevrf.VRFOut{Height: replay.VRFHeight, Proof: replay.VRFProof}
-	err = gamevrf.FilVerifyVRFByTipSet(gamevrf.DomainSeparationTag(replay.DomainSeparationTag), addr, tps, entropy, vrfout)
-	if err != nil {
-		t.Fatal(err)
-	}
 }
 
 func contractGameRoundInfoToGameRoundInfo(roundInfo *contracts.GameRoundInfo) GameRoundInfo {

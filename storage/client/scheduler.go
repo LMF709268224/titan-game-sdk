@@ -21,10 +21,18 @@ type CreateAssetRsp struct {
 	AlreadyExists bool
 }
 
+// NodeIPInfo
+type CandidateIPInfo struct {
+	NodeID      string
+	IP          string
+	ExternalURL string
+}
+
 type Scheduler interface {
 	CreateUserAsset(ctx context.Context, ap *AssetProperty) (*CreateAssetRsp, error)
 	DeleteUserAsset(ctx context.Context, assetCID string) error
 	ShareUserAssets(ctx context.Context, assetCID []string) (map[string]string, error)
+	GetCandidateIPs(ctx context.Context) ([]*CandidateIPInfo, error)
 }
 
 var _ Scheduler = (*scheduler)(nil)
@@ -129,6 +137,37 @@ func (s *scheduler) ShareUserAssets(ctx context.Context, assetCID []string) (map
 	}
 
 	ret := make(map[string]string)
+	err = json.Unmarshal(b, &ret)
+	if err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
+func (s *scheduler) GetCandidateIPs(ctx context.Context) ([]*CandidateIPInfo, error) {
+	req := request{
+		Jsonrpc: "2.0",
+		Method:  "titan.GetCandidateIPs",
+		Params:  nil,
+		ID:      1,
+	}
+
+	rsp, err := s.client.request(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	b, err := json.Marshal(rsp.Result)
+	if err != nil {
+		return nil, err
+	}
+
+	if rsp.Error != nil {
+		return nil, fmt.Errorf("%s code %d ", rsp.Error.Message, rsp.Error.Code)
+	}
+
+	ret := make([]*CandidateIPInfo, 0)
 	err = json.Unmarshal(b, &ret)
 	if err != nil {
 		return nil, err

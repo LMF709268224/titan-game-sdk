@@ -61,7 +61,7 @@ func main() {
 		return
 	}
 
-	if err := storage.DeleteFile(context.Background(), root.String()); err != nil {
+	if err := storage.Delete(context.Background(), root.String()); err != nil {
 		fmt.Println("UploadFile error ", err.Error())
 		return
 	}

@@ -113,7 +113,7 @@ func TestUpload(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				_, err = storage.UploadFile(context.Background(), path, progress)
+				_, err = storage.UploadFilesWithPath(context.Background(), path, progress)
 				if err != nil {
 					t.Log("upload file failed ", err.Error())
 					return nil
@@ -146,81 +146,83 @@ func TestUploadStream(t *testing.T) {
 	}
 
 	filePath := "./storage_test.go"
-	visitFile := func(fp string, fi os.DirEntry, err error) error {
-		// Check for and handle errors
-		if err != nil {
-			fmt.Println(err) // Can be used to handle errors (e.g., permission denied)
-			return nil
-		}
-		if fi.IsDir() {
-			return nil
-		} else {
-			// This is a file, you can perform file-specific operations here
-			if strings.HasSuffix(fp, ".go") {
-				path, err := filepath.Abs(fp)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				f, err := os.Open(path)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				_, err = storage.UploadStream(context.Background(), f, progress)
-				if err != nil {
-					t.Log("upload file failed ", err.Error())
-					return nil
-				}
-
-				t.Logf("totalSize %s success", fp)
-			}
-
-		}
-		return nil
-	}
-
-	err = filepath.WalkDir(filePath, visitFile)
+	f, err := os.Open(filePath)
 	if err != nil {
-		t.Fatal("WalkDir ", err)
+		t.Fatal(err)
 	}
+
+	cid, err := storage.UploadStream(context.Background(), f, progress)
+	if err != nil {
+		t.Fatal("upload file failed ", err.Error())
+	}
+
+	t.Logf("totalSize %s success, cid %s", filePath, cid.String())
+
 }
 
-func TestReadWrite(t *testing.T) {
-	data := []byte("111111111111111111111111111111111111")
-	carFile, err := os.Create("./example/example.car")
+func TestGetFile(t *testing.T) {
+	const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJBbGxvdyI6WyJ1c2VyIl0sIklEIjoiMTA1MjQ0MTYwN0BxcS5jb20iLCJOb2RlSUQiOiIiLCJFeHRlbmQiOiIifQ.Yjoxg9JA7SuikMFL0hHMtOANH1CD2v3JKbpkhSC88XQ"
+	const locatorURL = "https://120.79.221.36:5000/rpc/v0"
+	s, close, err := NewStorage(locatorURL, apiKey)
+	if err != nil {
+		t.Fatal("NewStorage error ", err)
+	}
+	defer close()
+
+	storageObject := s.(*storage)
+	t.Log("candidate node ", storageObject.candidateID)
+
+	progress := func(doneSize int64, totalSize int64) {
+		t.Logf("upload %d of %d", doneSize, totalSize)
+	}
+
+	filePath := "./storage_test.go"
+	f, err := os.Open(filePath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer carFile.Close()
 
-	// mFile := memfile.New([]byte{})
-	// root, err := createCarStream(f, carFile)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-	carFile.Write(data)
+	cid, err := s.UploadStream(context.Background(), f, progress)
+	if err != nil {
+		t.Fatal("upload file failed ", err.Error())
+	}
 
-	carFile.Seek(0, 0)
+	url, err := s.GetURL(context.Background(), cid.String())
+	if err != nil {
+		t.Fatal("get url ", err)
+	}
 
-	stat, err := carFile.Stat()
+	t.Log("url:", url)
+
+	reader, err := s.GetFileWithCid(context.Background(), cid.String())
+	if err != nil {
+		t.Fatal("get url ", err)
+	}
+	defer reader.Close()
+
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		t.Fatal("get url ", err)
+	}
+
+	t.Logf("get file %s %d", cid.String(), len(data))
+}
+
+func TestUploadFileWithURL(t *testing.T) {
+	const apiKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJBbGxvdyI6WyJ1c2VyIl0sIklEIjoiMTA1MjQ0MTYwN0BxcS5jb20iLCJOb2RlSUQiOiIiLCJFeHRlbmQiOiIifQ.Yjoxg9JA7SuikMFL0hHMtOANH1CD2v3JKbpkhSC88XQ"
+	const locatorURL = "https://120.79.221.36:5000/rpc/v0"
+	s, close, err := NewStorage(locatorURL, apiKey)
+	if err != nil {
+		t.Fatal("NewStorage error ", err)
+	}
+	defer close()
+
+	url := "https://pics5.baidu.com/feed/b3119313b07eca803650fa0081eb99d0a34483d1.png@f_auto?token=31cbe99aa969d0b25d1a4b692528be80"
+	cid, newURL, err := s.UploadFileWithURL(context.Background(), url, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	// buf := mFile.Bytes()
-	t.Logf("buf len %d, car file size:%d", len(data), stat.Size())
 
-	testFile, err := os.Create("./example/test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer testFile.Close()
+	t.Logf("cid %s, newURL %s", cid, newURL)
 
-	io.Copy(testFile, carFile)
-
-	stat, err = testFile.Stat()
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Log("test file size:", stat.Size())
 }
