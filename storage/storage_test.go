@@ -151,7 +151,7 @@ func TestUploadStream(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cid, err := storage.UploadStream(context.Background(), f, progress)
+	cid, err := storage.UploadStream(context.Background(), f, f.Name(), progress)
 	if err != nil {
 		t.Fatal("upload file failed ", err.Error())
 	}
@@ -182,7 +182,7 @@ func TestGetFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cid, err := s.UploadStream(context.Background(), f, progress)
+	cid, err := s.UploadStream(context.Background(), f, f.Name(), progress)
 	if err != nil {
 		t.Fatal("upload file failed ", err.Error())
 	}
@@ -217,7 +217,13 @@ func TestUploadFileWithURL(t *testing.T) {
 	}
 	defer close()
 
-	url := "https://pics5.baidu.com/feed/b3119313b07eca803650fa0081eb99d0a34483d1.png@f_auto?token=31cbe99aa969d0b25d1a4b692528be80"
+	url := "https://files.oaiusercontent.com/file-HQiDjktehYWarlxwnUNF7djs?se=2023-11-07T09%3A38%3A06Z&sp=r&sv=2021-08-06&sr=b&rscc=max-age%3D31536000%2C%20immutable&rscd=attachment%3B%20filename%3D563c233a-76a1-4c85-9d07-a641e1e5937a.webp&sig=rJBb9kHyciaBUQn%2BQmnutv%2B0W3EqOwU5uWBrbHUHtdc%3D"
+	name, err := getFileNameFromURL(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Log("name:", name)
 	cid, newURL, err := s.UploadFileWithURL(context.Background(), url, nil)
 	if err != nil {
 		t.Fatal(err)

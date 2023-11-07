@@ -9,9 +9,11 @@ import (
 	"mime/multipart"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -37,7 +39,7 @@ type Storage interface {
 	// UploadFileWithURL return file cid and new url
 	UploadFileWithURL(ctx context.Context, url string, progress ProgressFunc) (string, string, error)
 	// UploadStream can not upload bigger than 100M, it will cost much memory and return error
-	UploadStream(ctx context.Context, r io.Reader, progress ProgressFunc) (cid.Cid, error)
+	UploadStream(ctx context.Context, r io.Reader, name string, progress ProgressFunc) (cid.Cid, error)
 	Delete(ctx context.Context, rootCID string) error
 	GetURL(ctx context.Context, rootCID string) (string, error)
 	GetFileWithCid(ctx context.Context, rootCID string) (io.ReadCloser, error)
@@ -209,6 +211,10 @@ func (s *storage) uploadFileWithForm(ctx context.Context, r io.Reader, name, upl
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode != http.StatusOK {
+		return fmt.Errorf("http StatusCode %d", response.StatusCode)
+	}
+
 	b, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
@@ -246,7 +252,7 @@ func (s *storage) Delete(ctx context.Context, rootCID string) error {
 	return s.schedulerAPI.DeleteUserAsset(ctx, rootCID)
 }
 
-func (s *storage) UploadStream(ctx context.Context, r io.Reader, progress ProgressFunc) (cid.Cid, error) {
+func (s *storage) UploadStream(ctx context.Context, r io.Reader, name string, progress ProgressFunc) (cid.Cid, error) {
 	memFile := memfile.New([]byte{})
 	root, err := createCarStream(r, memFile)
 	if err != nil {
@@ -254,7 +260,11 @@ func (s *storage) UploadStream(ctx context.Context, r io.Reader, progress Progre
 	}
 	memFile.Seek(0, 0)
 
-	assetProperty := &client.AssetProperty{AssetCID: root.String(), AssetName: root.String(), AssetSize: int64(len(memFile.Bytes())), AssetType: string(FileTypeFile)}
+	if len(name) == 0 {
+		name = root.String()
+	}
+
+	assetProperty := &client.AssetProperty{AssetCID: root.String(), AssetName: name, AssetSize: int64(len(memFile.Bytes())), AssetType: string(FileTypeFile)}
 	rsp, err := s.schedulerAPI.CreateUserAsset(ctx, assetProperty)
 	if err != nil {
 		return cid.Cid{}, fmt.Errorf("CreateUserAsset error %w", err)
@@ -331,7 +341,16 @@ func (s *storage) UploadFileWithURL(ctx context.Context, url string, progress Pr
 	}
 	defer rsp.Body.Close()
 
-	rootCid, err := s.UploadStream(ctx, rsp.Body, progress)
+	if rsp.StatusCode != http.StatusOK {
+		return "", "", fmt.Errorf("http StatusCode %d", rsp.StatusCode)
+	}
+
+	filename, err := getFileNameFromURL(url)
+	if err != nil {
+		fmt.Println("getFileNameFromURL ", err.Error())
+	}
+
+	rootCid, err := s.UploadStream(ctx, rsp.Body, filename, progress)
 	if err != nil {
 		return "", "", err
 	}
@@ -386,4 +405,29 @@ func getFastNode(candidates []*client.CandidateIPInfo) []*client.CandidateIPInfo
 	wg.Wait()
 
 	return fastCandidates
+}
+
+func getFileNameFromURL(rawURL string) (string, error) {
+	u, err := url.ParseRequestURI(rawURL)
+	if err != nil {
+		return "", err
+	}
+
+	filename := u.Query().Get("filename")
+	if len(filename) > 0 {
+		return filename, nil
+	}
+
+	// special for chatgpt
+	rscd := u.Query().Get("rscd")
+	vs := strings.Split(rscd, ";")
+	if len(vs) < 1 {
+		return "", fmt.Errorf("can not find filename")
+	}
+
+	filename = vs[1]
+	filename = strings.TrimSpace(filename)
+	filename = strings.TrimPrefix(filename, "filename=")
+
+	return filename, nil
 }

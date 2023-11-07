@@ -55,7 +55,7 @@ func main() {
 	}
 
 	// If want to upload file, use storage.UploadFile interface
-	root, err := storage.UploadStream(context.Background(), f, progress)
+	root, err := storage.UploadStream(context.Background(), f, f.Name(), progress)
 	if err != nil {
 		fmt.Println("UploadFile error ", err.Error())
 		return
